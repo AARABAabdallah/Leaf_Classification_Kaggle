@@ -1,7 +1,7 @@
-Project_ML
+leaf_classfication_ML
 ==============================
 
-Leaf_Classification_Kaggle
+Leaf Classification Kaggle
 
 Project Organization
 ------------

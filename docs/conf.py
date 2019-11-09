@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Project_ML documentation build configuration file, created by
+# leaf_classfication_ML documentation build configuration file, created by
 # sphinx-quickstart.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -41,7 +41,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Project_ML'
+project = u'leaf_classfication_ML'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -164,7 +164,7 @@ html_static_path = ['_static']
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Project_MLdoc'
+htmlhelp_basename = 'leaf_classfication_mldoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -184,8 +184,8 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
     ('index',
-     'Project_ML.tex',
-     u'Project_ML Documentation',
+     'leaf_classfication_ml.tex',
+     u'leaf_classfication_ML Documentation',
      u"AARABA_RAMI", 'manual'),
 ]
 
@@ -215,7 +215,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'Project_ML', u'Project_ML Documentation',
+    ('index', 'leaf_classfication_ml', u'leaf_classfication_ML Documentation',
      [u"AARABA_RAMI"], 1)
 ]
 
@@ -229,9 +229,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'Project_ML', u'Project_ML Documentation',
-     u"AARABA_RAMI", 'Project_ML',
-     'Leaf_Classification_Kaggle', 'Miscellaneous'),
+    ('index', 'leaf_classfication_ml', u'leaf_classfication_ML Documentation',
+     u"AARABA_RAMI", 'leaf_classfication_ML',
+     'Leaf Classification Kaggle', 'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
