@@ -16,10 +16,8 @@ class LogisticalRegressionModel:
 
     def train_model(self):
         self.clf = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-        #self.x_train, self.y_train = self.data_man.load_data_train()
         self.load_data()
         self.clf.fit(self.x_train, self.y_train)
-        #return clf
 
     def load_data(self):
         self.x_train, self.y_train = self.data_man.load_data_train()
@@ -32,4 +30,3 @@ class LogisticalRegressionModel:
         self.predict_proba_train()
         self.training_loss = log_loss(y_true=self.y_train, y_pred=self.probas_train, labels=self.clf.classes_)
         return self.training_loss
-    
