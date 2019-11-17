@@ -19,6 +19,8 @@ class DataManipulation:
         data = data.drop("species", axis=1)
         data = np.array(data)
         """
+        ones = [1 for i in range(len(raw_data))] # l'ajout du biais !
+        raw_data["ones"] = ones
         labels = raw_data["species"]
         labels = np.array(labels)
         raw_data = raw_data.drop("species", axis=1)
@@ -31,6 +33,8 @@ class DataManipulation:
         #labels = raw_data["species"]
         #labels = np.array(labels)
         #raw_data = raw_data.drop("species", axis=1)
+        ones = [1 for i in range(len(raw_data))]  # l'ajout du biais !
+        raw_data["ones"] = ones
         raw_data = np.array(raw_data)
         return raw_data
     """
