@@ -2,6 +2,7 @@ from sklearn.linear_model import LogisticRegression
 import data.data_manipulation as dm
 from sklearn.metrics import log_loss
 import joblib
+import pandas as pd
 
 class LogisticalRegressionModel:
     def __init__(self):
@@ -18,6 +19,7 @@ class LogisticalRegressionModel:
         self.training_loss_splited_data = None
         self.test_loss_data_splited = None
         self.data_man = dm.DataManipulation()
+        self.probas_unlabeled = None
         self.probas_test_data_splited = None
         self.probas_train_data_splited = None
         self.probas_all_train_data = None # 2D array containing in each i and each column j
@@ -36,6 +38,7 @@ class LogisticalRegressionModel:
 
     def load_data(self, type='data_splited'):
         self.data_man.load_data()
+        self.data_man.load_unlabeled_data()
         if type == 'all_data':
             self.data, self.labels = self.data_man.get_data()
         else:
@@ -49,6 +52,9 @@ class LogisticalRegressionModel:
 
     def predict_proba_test_splited_data(self):
         self.probas_test_data_splited = self.clf_splited_data.predict_proba(self.data_test)
+
+    def predict_proba_unlabeled(self):
+        self.probas_unlabeled = self.clf_all_data.predict_proba(self.data_unlabeled)
 
     def calculate_training_loss(self, type='data_splited'):
         if type == 'all_data':
@@ -74,14 +80,20 @@ class LogisticalRegressionModel:
 
     def save_all_data_model(self):
         joblib.dump(self.clf_all_data, '../models/lregr_all_data_model.joblib')
-        #"../models/lregr_all_data_model.joblib"
 
     def save_splited_data_model(self):
         joblib.dump(self.clf_splited_data, '../models/lregr_splited_data_model.joblib')
-        # "../models/lregr_all_data_model.joblib"
 
     def load_all_data_model(self):
         self.clf_all_data = joblib.load('../models/lregr_all_data_model.joblib')
 
     def load_splited_data_model(self):
         self.clf_splited_data = joblib.load('../models/lregr_splited_data_model.joblib')
+
+    def submit_test_results(self):
+        self.predict_proba_unlabeled()
+        header = self.clf_all_data.classes_
+        df = pd.DataFrame(self.probas_unlabeled, columns=header)
+        test_ids = self.data_man.get_test_data_ids()
+        df.insert(loc=0, column='id', value=test_ids)
+        df.to_csv(r'../data_sets/submissions/test_results.csv', index= None)

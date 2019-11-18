@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import cv2
 
 
 class DataManipulation:
@@ -77,3 +79,44 @@ class DataManipulation:
 
     def get_unlabeled_data(self):
         return self.data_unlabeled
+
+    def get_test_data_ids(self):
+        return self.ids_data_test
+
+    def leaf_image(self, image_id, target_length=160):
+        """
+        `image_id` should be the index of the image in the images/ folder
+
+        Reture the image of a given id(1~1584) with the target size (target_length x target_length)
+
+        """
+
+        image_name = str(image_id) + '.jpg'
+        leaf_img = plt.imread('../data_sets/raw/images/' + image_name)  # Reading in the image
+        leaf_img_width = leaf_img.shape[1]
+        leaf_img_height = leaf_img.shape[0]
+        # target_length = 160
+        img_target = np.zeros((target_length, target_length), np.uint8)
+        if leaf_img_width >= leaf_img_height:
+            scale_img_width = target_length
+            scale_img_height = int((float(scale_img_width) / leaf_img_width) * leaf_img_height)
+            img_scaled = cv2.resize(leaf_img, (scale_img_width, scale_img_height), interpolation=cv2.INTER_AREA)
+            copy_location = (target_length - scale_img_height) / 2
+            img_target[copy_location:copy_location + scale_img_height, :] = img_scaled
+        else:
+            # leaf_img_width < leaf_img_height:
+            scale_img_height = target_length
+            scale_img_width = int((float(scale_img_height) / leaf_img_height) * leaf_img_width)
+            img_scaled = cv2.resize(leaf_img, (scale_img_width, scale_img_height), interpolation=cv2.INTER_AREA)
+            copy_location = (target_length - scale_img_width) / 2
+            img_target[:, copy_location:copy_location + scale_img_width] = img_scaled
+
+        return img_target
+
+    # Test the leaf_image function
+    #leaf_id = 343
+    #leaf_img = leaf_image(leaf_id, target_length=160);
+    #plt.imshow(leaf_img, cmap='gray');
+    #plt.title('Leaf # ' + str(leaf_id));
+    #plt.axis('off');
+    #plt.show()
