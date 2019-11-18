@@ -5,7 +5,7 @@ def main():
     log_reg = lr.LogisticalRegressionModel()
     #log_reg.train_model(type='all_data')
     svm_model = svc.SvmModel()
-    svm_model.cross_validation(kernel='rbf')
+    svm_model.cross_validation(kernel='poly')
     #svm_model.train_model(kernel='poly',gamma='auto')
     #svm_model.calcul_test_accuracy()
     #print(svm_model.test_accuracy)

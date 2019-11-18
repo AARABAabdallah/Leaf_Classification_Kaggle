@@ -62,9 +62,10 @@ class SvmModel:
             self.train_model(kernel='rbf',gamma=0.001)
             best_gamma_score = cross_val_score(self.clf,self.x_train,self.y_train,cv=5).mean()
             best_gamma = 0.001
-            for gamma in list(np.arange(0.001,0.11,0.01))+list(np.arange(0.1, 2.1, 0.1))+['auto']:
-                self.train_model(gamma=gamma)
+            for gamma in [0.000001*(10**i) for i in range(6)]+list(np.arange(0.1, 2.1, 0.1))+[2**i for i in range(1,10)]+['auto']:
+                self.train_model(kernel='rbf',gamma=gamma)
                 mean_score = cross_val_score(self.clf,self.x_train,self.y_train,cv=5).mean()
+                print(mean_score,gamma)
                 if mean_score > best_gamma_score :
                     best_gamma_score = mean_score
                     best_gamma = gamma
@@ -72,10 +73,52 @@ class SvmModel:
                     print('score = ',best_gamma_score,end='\n\n')
             self.rbf_gamma = best_gamma
             self.train_model(kernel='rbf',gamma=self.rbf_gamma)
-            print(self.rbf_gamma)
+            print("resulting gamma : ",self.rbf_gamma)
 
-        #elif kernel == 'sigmoid':
-        #   best_gamma_score = self.train_model(gamma=0.001)
-        #  best_gamma = 0.001
+        elif kernel == 'sigmoid':
+            self.train_model(kernel='sigmoid',gamma=0.1,coef0=0)
+            best_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
+            best_gamma = 0.1
+            best_coef0 = 0
+            for gamma in list(np.arange(0.1, 2.1, 0.1)) + [2 ** i for i in range(1, 10)] + ['auto']:
+                for coef0 in [0.001 * (10 ** i) for i in range(3)]+[2 ** i for i in range(10)] :
+                    self.train_model(kernel='sigmoid', gamma=gamma, coef0=coef0)
+                    mean_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
+                    if mean_score > best_score :
+                        best_score = mean_score
+                        best_gamma = gamma
+                        best_coef0 = coef0
+                        print('gama = ',best_gamma)
+                        print('coef0 = ',best_coef0)
+                        print('score = ',best_score,end='\n\n')
+            self.sigmoid_gamma = best_gamma
+            self.sigmoid_coef0 = best_coef0
+            self.train_model(kernel='sigmoid',gamma=self.sigmoid_gamma,coef0=self.sigmoid_coef0)
+            print("resulting gamma : ",self.sigmoid_gamma)
+            print("resulting coef0 : ",self.sigmoid_coef0)
+        elif kernel == 'poly':
+            self.train_model(kernel='poly',gamma=0.1,coef0=0,degree=1)
+            best_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
+            best_gamma = 0.1
+            best_coef0 = 0
+            best_degree = 1
+            for gamma in list(np.arange(0.1, 2.1, 0.1)) + [2 ** i for i in range(1, 5)] + ['auto']:
+                for coef0 in [2 ** i for i in range(10)] :
+                    for degree in range(2,10):
+                        self.train_model(kernel='sigmoid', gamma=gamma, coef0=coef0)
+                        mean_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
+                        if mean_score > best_score :
+                            best_score = mean_score
+                            best_gamma = gamma
+                            best_coef0 = coef0
+                            print('gama = ',best_gamma)
+                            print('coef0 = ',best_coef0)
+                            print('score = ',best_score,end='\n\n')
+            self.sigmoid_gamma = best_gamma
+            self.sigmoid_coef0 = best_coef0
+            self.train_model(kernel='sigmoid',gamma=self.sigmoid_gamma,coef0=self.sigmoid_coef0)
+            print("resulting gamma : ",self.sigmoid_gamma)
+            print("resulting coef0 : ",self.sigmoid_coef0)
+
 
 
