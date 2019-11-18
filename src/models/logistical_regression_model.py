@@ -1,6 +1,7 @@
 from sklearn.linear_model import LogisticRegression
 import data.data_manipulation as dm
 from sklearn.metrics import log_loss
+import joblib
 
 class LogisticalRegressionModel:
     def __init__(self):
@@ -25,11 +26,11 @@ class LogisticalRegressionModel:
 
     def train_model(self, type='all_data'):
         if type == 'all_data':
-            self.load_data('all_data')
+            #self.load_data('all_data')
             self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_all_data.fit(self.data, self.labels)
         else:
-            self.load_data('data_splited')
+            #self.load_data('data_splited')
             self.clf_splited_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_splited_data.fit(self.data_train, self.labels_train)
 
@@ -70,3 +71,17 @@ class LogisticalRegressionModel:
 
     def load_unlabeled_data(self):
         self.data_unlabeled = self.data_man.get_unlabeled_data()
+
+    def save_all_data_model(self):
+        joblib.dump(self.clf_all_data, '../models/lregr_all_data_model.joblib')
+        #"../models/lregr_all_data_model.joblib"
+
+    def save_splited_data_model(self):
+        joblib.dump(self.clf_splited_data, '../models/lregr_splited_data_model.joblib')
+        # "../models/lregr_all_data_model.joblib"
+
+    def load_all_data_model(self):
+        self.clf_all_data = joblib.load('../models/lregr_all_data_model.joblib')
+
+    def load_splited_data_model(self):
+        self.clf_splited_data = joblib.load('../models/lregr_splited_data_model.joblib')
