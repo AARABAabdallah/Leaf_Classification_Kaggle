@@ -29,9 +29,9 @@ class LogisticalRegressionModel:
             self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_all_data.fit(self.data, self.labels)
         else:
-            self.load_data('all_data')
+            self.load_data('data_splited')
             self.clf_splited_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-            self.clf_splited_data.fit(self.data, self.labels)
+            self.clf_splited_data.fit(self.data_train, self.labels_train)
 
     def load_data(self, type='data_splited'):
         self.data_man.load_data()
@@ -57,11 +57,12 @@ class LogisticalRegressionModel:
             return self.training_loss_all_data
         else:
             self.predict_proba_train('data_splited')
-            self.training_loss_all_data = log_loss(y_true=self.labels_train, y_pred=self.probas_train_data_splited,
+            self.training_loss_splited_data = log_loss(y_true=self.labels_train, y_pred=self.probas_train_data_splited,
                                                    labels=self.clf_splited_data.classes_)
             return self.training_loss_splited_data
 
     def calculate_test_loss_splited_data(self):
+        self.data_test, self.labels_test = self.data_man.get_test_data()
         self.predict_proba_test_splited_data()
         self.test_loss_data_splited = log_loss(y_true=self.labels_test, y_pred=self.probas_test_data_splited,
                                                    labels=self.clf_splited_data.classes_)
