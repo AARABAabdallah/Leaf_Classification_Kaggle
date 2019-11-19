@@ -3,23 +3,41 @@ import data.data_manipulation as dm
 from sklearn.metrics import log_loss
 import joblib
 import pandas as pd
+import numpy as np
 
 class LogisticalRegressionModel:
     def __init__(self):
         self.clf_all_data = None
         self.clf_splited_data = None
+        self.clf_images_model = None
+        self.clf_images_features_model = None
+
         self.data = None
         self.labels = None
         self.data_train = None
         self.data_test = None
+        self.data_unlabeled = None
+        self.features_images_train = None
+        self.images_train = None
+        self.images_unlabeled = None
+        self.features_images_unlabeled = None
+
         self.labels_train = None
         self.labels_test = None
-        self.data_unlabeled = None
+
         self.training_loss_all_data = None
         self.training_loss_splited_data = None
+        self.training_loss_data_train_images = None
+        self.training_loss_data_train_features_images = None
+
         self.test_loss_data_splited = None
         self.data_man = dm.DataManipulation()
+
+        self.probas_unlabeled_features_images = None
+        self.probas_data_train_features_images = None
+        self.probas_data_train_images = None
         self.probas_unlabeled = None
+        self.probas_unlabeled_images = None
         self.probas_test_data_splited = None
         self.probas_train_data_splited = None
         self.probas_all_train_data = None # 2D array containing in each i and each column j
@@ -31,11 +49,12 @@ class LogisticalRegressionModel:
             #self.load_data('all_data')
             self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_all_data.fit(self.data, self.labels)
+            self.save_all_data_model()
         else:
             #self.load_data('data_splited')
             self.clf_splited_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_splited_data.fit(self.data_train, self.labels_train)
-
+            self.save_splited_data_model()
     def load_data(self, type='data_splited'):
         self.data_man.load_data()
         self.data_man.load_unlabeled_data()
@@ -90,10 +109,90 @@ class LogisticalRegressionModel:
     def load_splited_data_model(self):
         self.clf_splited_data = joblib.load('../models/lregr_splited_data_model.joblib')
 
+    def load_images_data_train(self):
+        self.images_train = self.data_man.load_images_data_train()
+
+    def load_images_data_unlabeled(self):
+        self.images_unlabeled = self.data_man.load_images_data_unlabeled()
+
+    def load_features_images_data_train(self):
+        self.features_images_train = np.concatenate((self.data, self.images_train), axis=1)
+
+    def load_features_images_data_unlabeled(self):
+        self.features_images_unlabeled = np.concatenate((self.data_unlabeled, self.images_unlabeled), axis=1)
+
     def submit_test_results(self):
         self.predict_proba_unlabeled()
         header = self.clf_all_data.classes_
         df = pd.DataFrame(self.probas_unlabeled, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/test_results.csv', index= None)
+        df.to_csv(r'../data_sets/submissions/lr_test_results.csv', index= None)
+
+    def submit_test_results_images(self):
+        self.predict_probas_unlabeled_images()
+        header = self.clf_images_model.classes_
+        df = pd.DataFrame(self.probas_unlabeled_images, columns=header)
+        test_ids = self.data_man.get_test_data_ids()
+        df.insert(loc=0, column='id', value=test_ids)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_images.csv', index= None)
+
+    def submit_test_results_images_features(self):
+        self.predict_probas_unlabeled_features_images()
+        header = self.clf_images_features_model.classes_
+        df = pd.DataFrame(self.probas_unlabeled_features_images, columns=header)
+        test_ids = self.data_man.get_test_data_ids()
+        df.insert(loc=0, column='id', value=test_ids)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_images_features.csv', index= None)
+
+
+    def train_model_images(self):
+        #self.images_train = self.data_man.load_images_data_train()
+        self.clf_images_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_model.fit(self.images_train, self.labels)
+        self.save_images_data_model()
+
+
+    def predict_probas_train_images(self):
+        self.probas_data_train_images = self.clf_images_model.predict_proba(self.images_train)
+
+    def predict_probas_train_features_images(self):
+        self.probas_data_train_features_images = self.clf_images_features_model.predict_proba(self.features_images_train)
+
+    def predict_probas_unlabeled_images(self):
+        self.probas_unlabeled_images = self.clf_images_model.predict_proba(self.images_unlabeled)
+
+    def predict_probas_unlabeled_features_images(self):
+        self.probas_unlabeled_features_images = self.clf_images_features_model.predict_proba(self.features_images_unlabeled)
+
+    def calculate_training_loss_images(self):
+            self.predict_probas_train_images()
+            self.training_loss_data_train_images = log_loss(y_true=self.labels, y_pred=self.probas_data_train_images,
+                                                   labels=self.clf_images_model.classes_)
+            return self.training_loss_data_train_images
+
+    def save_images_data_model(self):
+        joblib.dump(self.clf_images_model, '../models/lregr_images_data_model.joblib')
+
+    def load_images_data_model(self):
+        self.clf_images_model = joblib.load('../models/lregr_images_data_model.joblib')
+
+
+    def train_model_images_features(self):
+        #self.images_train = self.data_man.load_images_data_train()
+        self.clf_images_features_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_features_model.fit(self.features_images_train, self.labels)
+        self.save_features_images_data_model()
+
+    def calculate_training_loss_features_images(self):
+            self.predict_probas_train_features_images()
+            self.training_loss_data_train_features_images = log_loss(y_true=self.labels, y_pred=self.probas_data_train_features_images,
+                                                   labels=self.clf_images_model.classes_)
+            return self.training_loss_data_train_features_images
+
+    def save_features_images_data_model(self):
+        joblib.dump(self.clf_images_features_model, '../models/lregr_features_images_data_model.joblib')
+
+    def load_features_images_data_model(self):
+        self.clf_images_features_model = joblib.load('../models/lregr_features_images_data_model.joblib')
+

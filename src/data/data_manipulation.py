@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-
 class DataManipulation:
 
     def __init__(self):
@@ -41,6 +40,7 @@ class DataManipulation:
         raw_data = pd.read_csv("../data_sets/raw/test.csv")
         self.ids_data_test = raw_data["id"]
         raw_data = raw_data.drop("id", axis=1)
+        #print(len(self.ids_all_data_train))
         ones = [1 for i in range(len(raw_data))]  # Adding Bias
         raw_data["ones"] = ones
         raw_data = np.array(raw_data)
@@ -83,14 +83,31 @@ class DataManipulation:
     def get_test_data_ids(self):
         return self.ids_data_test
 
-    def leaf_image(self, image_id, target_length=160):
+    def load_images_data_train(self):
+        #self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
+        images_train = []
+        for i in range(len(self.data)):
+            img = self.leaf_image(self.ids_all_data_train[i])
+            img = np.array(img)
+            img = img.flatten()
+            images_train.append(img)
+        return np.array(images_train)
+
+    def load_images_data_unlabeled(self):
+        #self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
+        images_test = []
+        for i in range(len(self.data_unlabeled)):
+            img = self.leaf_image(self.ids_data_test[i])
+            img = np.array(img)
+            img = img.flatten()
+            images_test.append(img)
+        return np.array(images_test)
+
+    def leaf_image(self, image_id, target_length=80):
         """
         `image_id` should be the index of the image in the images/ folder
-
         Reture the image of a given id(1~1584) with the target size (target_length x target_length)
-
         """
-
         image_name = str(image_id) + '.jpg'
         leaf_img = plt.imread('../data_sets/raw/images/' + image_name)  # Reading in the image
         leaf_img_width = leaf_img.shape[1]
@@ -101,14 +118,14 @@ class DataManipulation:
             scale_img_width = target_length
             scale_img_height = int((float(scale_img_width) / leaf_img_width) * leaf_img_height)
             img_scaled = cv2.resize(leaf_img, (scale_img_width, scale_img_height), interpolation=cv2.INTER_AREA)
-            copy_location = (target_length - scale_img_height) / 2
+            copy_location = int((target_length - scale_img_height) / 2)
             img_target[copy_location:copy_location + scale_img_height, :] = img_scaled
         else:
             # leaf_img_width < leaf_img_height:
             scale_img_height = target_length
             scale_img_width = int((float(scale_img_height) / leaf_img_height) * leaf_img_width)
             img_scaled = cv2.resize(leaf_img, (scale_img_width, scale_img_height), interpolation=cv2.INTER_AREA)
-            copy_location = (target_length - scale_img_width) / 2
+            copy_location = int((target_length - scale_img_width) / 2)
             img_target[:, copy_location:copy_location + scale_img_width] = img_scaled
 
         return img_target
