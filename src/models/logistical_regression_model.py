@@ -10,7 +10,7 @@ import tqdm as tqdm
 class LogisticalRegressionModel:
     def __init__(self):
         self.clf_all_data = None
-        self.clf_splited_data = None
+        #self.clf_splited_data = None
         self.clf_images_model = None
         self.clf_images_features_model = None
         self.clf_pca_model_splited = None
@@ -60,228 +60,203 @@ class LogisticalRegressionModel:
         # where each class j corresponds to its order within self.clf.classes
         self.nbr_comp_pca_model_trained_with = None
 
-    def train_model(self, type='all_data'):
-        if type == 'all_data':
-            # self.load_data('all_data')
-            self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-            self.clf_all_data.fit(self.data, self.labels)
-            self.save_all_data_model()
-        else:
-            # self.load_data('data_splited')
-            self.clf_splited_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-            self.clf_splited_data.fit(self.data_train, self.labels_train)
-            self.save_splited_data_model()
-
-    def load_data(self, type='data_splited'):
         self.data_man.load_data()
-        self.data_man.load_unlabeled_data()
-        if type == 'all_data':
-            self.data, self.labels = self.data_man.get_data()
-        else:
-            self.data_train, self.labels_train = self.data_man.get_training_data()
 
-    def predict_proba_train(self, type='data_splited'):
-        if type == 'all_data':
-            self.probas_all_train_data = self.clf_all_data.predict_proba(self.data)
-        else:
-            self.probas_train_data_splited = self.clf_splited_data.predict_proba(self.data_train)
+    ############################# Features Trained model #############################
+    def train_model_features(self):
+        data, labels = self.data_man.get_data()
+        self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_all_data.fit(data, labels)
+        self.save_model_features()
 
-    def predict_proba_test_splited_data(self):
-        self.probas_test_data_splited = self.clf_splited_data.predict_proba(self.data_test)
-
-    def predict_proba_unlabeled(self):
-        self.probas_unlabeled = self.clf_all_data.predict_proba(self.data_unlabeled)
-
-    def calculate_training_loss(self, type='data_splited'):
-        if type == 'all_data':
-            self.predict_proba_train('all_data')
-            self.training_loss_all_data = log_loss(y_true=self.labels, y_pred=self.probas_all_train_data,
+    def calculate_training_loss(self): #type='data_splited'):
+        data, labels = self.data_man.get_data()
+        probas_all_train_data = self.clf_all_data.predict_proba(data)
+        training_loss_all_data = log_loss(y_true=labels, y_pred=probas_all_train_data,
                                                    labels=self.clf_all_data.classes_)
-            return self.training_loss_all_data
-        else:
-            self.predict_proba_train('data_splited')
-            self.training_loss_splited_data = log_loss(y_true=self.labels_train, y_pred=self.probas_train_data_splited,
-                                                       labels=self.clf_splited_data.classes_)
-            return self.training_loss_splited_data
+        return training_loss_all_data
 
-    def calculate_test_loss_splited_data(self):
-        self.data_test, self.labels_test = self.data_man.get_test_data()
-        self.predict_proba_test_splited_data()
-        self.test_loss_data_splited = log_loss(y_true=self.labels_test, y_pred=self.probas_test_data_splited,
-                                               labels=self.clf_splited_data.classes_)
-        return self.test_loss_data_splited
-
-    def load_unlabeled_data(self):
-        self.data_unlabeled = self.data_man.get_unlabeled_data()
-
-    def save_all_data_model(self):
+    def save_model_features(self):
         joblib.dump(self.clf_all_data, '../models/lregr_all_data_model.joblib')
 
-    def save_splited_data_model(self):
-        joblib.dump(self.clf_splited_data, '../models/lregr_splited_data_model.joblib')
-
-    def load_all_data_model(self):
+    def load_model_features(self):
         self.clf_all_data = joblib.load('../models/lregr_all_data_model.joblib')
 
-    def load_splited_data_model(self):
-        self.clf_splited_data = joblib.load('../models/lregr_splited_data_model.joblib')
-
-    def load_images_data_train(self):
-        self.images_train = self.data_man.load_images_data_train()
-
-    def load_images_data_unlabeled(self):
-        self.images_unlabeled = self.data_man.load_images_data_unlabeled()
-
-    def load_features_images_data_train(self):
-        self.features_images_train = np.concatenate((self.data, self.images_train), axis=1)
-
-    def load_features_images_data_unlabeled(self):
-        self.features_images_unlabeled = np.concatenate((self.data_unlabeled, self.images_unlabeled), axis=1)
-
     def submit_test_results(self):
-        self.predict_proba_unlabeled()
+        data_unlabeled = self.data_man.get_unlabeled_data()
+        probas_unlabeled = self.clf_all_data.predict_proba(data_unlabeled)
         header = self.clf_all_data.classes_
-        df = pd.DataFrame(self.probas_unlabeled, columns=header)
+        df = pd.DataFrame(probas_unlabeled, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
         df.to_csv(r'../data_sets/submissions/lr_test_results.csv', index=None)
 
+    ############################# Images trained model #############################
+    def train_model_images(self):
+        images_train = self.data_man.get_images_data_train()
+        labels = self.data_man.get_labels()
+        self.clf_images_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_model.fit(images_train, labels)
+        self.save_model_images()
+
+    def calculate_training_loss_images(self):
+        labels = self.data_man.get_labels()
+        images_train = self.data_man.get_images_data_train()
+        probas_data_train_images = self.clf_images_model.predict_proba(images_train)
+        training_loss_data_train_images = log_loss(y_true=labels, y_pred=probas_data_train_images,
+                                                        labels=self.clf_images_model.classes_)
+        return training_loss_data_train_images
+
+    def save_model_images(self):
+        joblib.dump(self.clf_images_model, '../models/lregr_images_data_model.joblib')
+
+    def load_model_images(self):
+        self.clf_images_model = joblib.load('../models/lregr_images_data_model.joblib')
+
     def submit_test_results_images(self):
-        self.predict_probas_unlabeled_images()
+        images_unlabeled = self.data_man.get_images_data_unlabeled()
+        probas_unlabeled_images = self.clf_images_model.predict_proba(images_unlabeled)
         header = self.clf_images_model.classes_
-        df = pd.DataFrame(self.probas_unlabeled_images, columns=header)
+        df = pd.DataFrame(probas_unlabeled_images, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
         df.to_csv(r'../data_sets/submissions/lr_test_results_images.csv', index=None)
 
-    def submit_test_results_images_features(self):
-        self.predict_probas_unlabeled_features_images()
-        header = self.clf_images_features_model.classes_
-        df = pd.DataFrame(self.probas_unlabeled_features_images, columns=header)
-        test_ids = self.data_man.get_test_data_ids()
-        df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_images_features.csv', index=None)
 
-    def train_model_images(self):
-        # self.images_train = self.data_man.load_images_data_train()
-        self.clf_images_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-        self.clf_images_model.fit(self.images_train, self.labels)
-        self.save_images_data_model()
+    ############################# Features, Images concatenated trained model #############################
+    def concatenate_features_images_train(self):
+        data, labels = self.data_man.get_data()
+        images_train = self.data_man.get_images_data_train()
+        features_images_train = np.concatenate((data, images_train), axis=1)
+        return features_images_train, labels
 
-    def predict_probas_train_images(self):
-        self.probas_data_train_images = self.clf_images_model.predict_proba(self.images_train)
+    def concatenate_features_images_test(self):
+        data_test = self.data_man.get_unlabeled_data()
+        images_test = self.data_man.get_images_data_unlabeled()
+        features_images_test = np.concatenate((data_test, images_test), axis=1)
+        return features_images_test
 
-    def predict_probas_train_features_images(self):
-        self.probas_data_train_features_images = self.clf_images_features_model.predict_proba(
-            self.features_images_train)
+    def train_model_images_features(self):
 
-    def predict_probas_unlabeled_images(self):
-        self.probas_unlabeled_images = self.clf_images_model.predict_proba(self.images_unlabeled)
+        features_images_train, labels = self.concatenate_features_images_train()
+        self.clf_images_features_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_features_model.fit(features_images_train, labels)
+        self.save_model_features_images()
 
     def predict_probas_unlabeled_features_images(self):
         self.probas_unlabeled_features_images = self.clf_images_features_model.predict_proba(
             self.features_images_unlabeled)
 
-    def calculate_training_loss_images(self):
-        self.predict_probas_train_images()
-        self.training_loss_data_train_images = log_loss(y_true=self.labels, y_pred=self.probas_data_train_images,
-                                                        labels=self.clf_images_model.classes_)
-        return self.training_loss_data_train_images
-
-    def save_images_data_model(self):
-        joblib.dump(self.clf_images_model, '../models/lregr_images_data_model.joblib')
-
-    def load_images_data_model(self):
-        self.clf_images_model = joblib.load('../models/lregr_images_data_model.joblib')
-
-    def train_model_images_features(self):
-        self.clf_images_features_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-        self.clf_images_features_model.fit(self.features_images_train, self.labels)
-        self.save_features_images_data_model()
-
     def calculate_training_loss_features_images(self):
-        self.predict_probas_train_features_images()
-        self.training_loss_data_train_features_images = log_loss(y_true=self.labels,
-                                                                 y_pred=self.probas_data_train_features_images,
+        features_images_train, labels = self.concatenate_features_images_train()
+        probas_data_train_features_images = self.clf_images_features_model.predict_proba(
+            features_images_train)
+        training_loss_data_train_features_images = log_loss(y_true=labels,
+                                                                 y_pred=probas_data_train_features_images,
                                                                  labels=self.clf_images_model.classes_)
-        return self.training_loss_data_train_features_images
+        return training_loss_data_train_features_images
 
-    def save_features_images_data_model(self):
+    def save_model_features_images(self):
         joblib.dump(self.clf_images_features_model, '../models/lregr_features_images_data_model.joblib')
 
-    def load_features_images_data_model(self):
+    def load_model_features_images(self):
         self.clf_images_features_model = joblib.load('../models/lregr_features_images_data_model.joblib')
 
-    #### model based on PCA transformed data
+    def submit_test_results_images_features(self):
+        #self.predict_probas_unlabeled_features_images()
+        features_images_unlabeled = self.concatenate_features_images_test()
+        probas_unlabeled_features_images = self.clf_images_features_model.predict_proba(
+            features_images_unlabeled)
+        header = self.clf_images_features_model.classes_
+        df = pd.DataFrame(probas_unlabeled_features_images, columns=header)
+        test_ids = self.data_man.get_test_data_ids()
+        df.insert(loc=0, column='id', value=test_ids)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_images_features.csv', index=None)
+
+    ############################# model based on PCA transformed data #############################
+    """
     def load_pca_data(self, num_comp=140):
         self.nbr_comp_pca_model_trained_with = num_comp
-        self.data_pca_transformed, self.data_unlabeled_pca_transformed, self.data_pca_transformed_splited_train, self.data_pca_transformed_splited_test = self.data_man.load_pca_data(
+        self.data_pca_transformed, self.data_unlabeled_pca_transformed, \
+        self.data_pca_transformed_splited_train, \
+        self.data_pca_transformed_splited_test = self.data_man.load_pca_data(
             num_components=num_comp)
 
-    def train_pca_model_cross_validation(self):
+    def train_model_pca_cross_validation_on_original_data(self):
         err_val_min = 1
         nbr_compoenents_min = 1
         for i in tqdm.tqdm(range(1, 192)):
-            self.load_pca_data(num_comp=i)
-            self.train_pca_model('data_splited')
-            validation_loss = self.calculate_training_loss_pca_data_test()
+            self.train_model_pca('all_data', num_comp=i)
+            validation_loss = self.calculate_training_loss_pca_data()
             if validation_loss < err_val_min:
                 err_val_min = validation_loss
                 nbr_compoenents_min = i
+
+        print("nbr_comp_min: ", nbr_compoenents_min)
+        self.train_model_pca('all_data', num_comp=nbr_compoenents_min)
+    """
+
+    # the validation_loss is calculated according to the type
+    def train_model_pca_cross_validation(self, type='data_splited'):
+        err_val_min = 1
+        nbr_compoenents_min = 1
+        for i in tqdm.tqdm(range(1, 192)):
+            if type == 'data_splited':
+                self.train_model_pca('data_splited', num_comp=i)
+                validation_loss = self.calculate_validation_loss_pca_data()
+            else:
+                self.train_model_pca('all_data', num_comp=i, save=False) #save=False so that we don't
+                validation_loss = self.calculate_training_loss_pca_data() # save the model in each iteration
+
+            if validation_loss < err_val_min:
+                err_val_min = validation_loss
+                nbr_compoenents_min = i
+
         print("nbr_comp_min: ",nbr_compoenents_min)
-        self.load_pca_data(num_comp=nbr_compoenents_min)
-        self.train_pca_model('all_data')
+        self.train_model_pca('all_data', num_comp=nbr_compoenents_min)
 
-    def train_pca_model(self, type='all_data'):
+    def train_model_pca(self, type='all_data', num_comp=167, save=True):
+        self.data_man.load_pca_data(num_components=num_comp)
         if type == 'data_splited':
-            self.data_test, self.labels_test = self.data_man.get_test_data()
+            data_pca_transformed_splited_train = self.data_man.get_data_pca_transformed_splited_train()
+            labels_train = self.data_man.get_labels_splited_train()
             self.clf_pca_model_splited = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-            self.clf_pca_model_splited.fit(self.data_pca_transformed_splited_train, self.labels_train)
+            self.clf_pca_model_splited.fit(data_pca_transformed_splited_train, labels_train)
         else:
+            data_pca_transformed = self.data_man.get_data_pca_transformed()
+            labels = self.data_man.get_labels()
             self.clf_pca_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
-            self.clf_pca_model.fit(self.data_pca_transformed, self.labels)
-            self.save_pca_model()
-
-    def save_pca_model(self):
-        joblib.dump(self.clf_pca_model, '../models/lregr_pca_model.joblib')
-
-    def load_pca_model(self):
-        self.clf_pca_model = joblib.load('../models/lregr_pca_model.joblib')
+            self.clf_pca_model.fit(data_pca_transformed, labels)
+            if save == True: self.save_model_pca(numm_comp=num_comp)
 
     def calculate_training_loss_pca_data(self):
-        self.predict_probas_pca_data()
-        self.training_loss_pca_data = log_loss(y_true=self.labels, y_pred=self.probas_pca_data,
+        labels = self.data_man.get_labels()
+        data_pca_transformed = self.data_man.get_data_pca_transformed()
+        probas_pca_data = self.clf_pca_model.predict_proba(data_pca_transformed)
+        training_loss_pca_data = log_loss(y_true=labels, y_pred=probas_pca_data,
                                                labels=self.clf_pca_model.classes_)
-        return self.training_loss_pca_data
+        return training_loss_pca_data
 
-    def calculate_training_loss_pca_data_train(self):
-        self.predict_probas_pca_data_train()
-        self.training_loss_pca_data_train = log_loss(y_true=self.labels_train, y_pred=self.probas_pca_data_train,
-                                                     labels=self.clf_pca_model_splited.classes_)
-        return self.training_loss_pca_data_train
-
-    def calculate_training_loss_pca_data_test(self):
-        self.predict_probas_pca_data_test()
-        self.training_loss_pca_data_test = log_loss(y_true=self.labels_test, y_pred=self.probas_pca_data_test,
+    def calculate_validation_loss_pca_data(self):
+        labels_test = self.data_man.get_labels_splited_test()
+        data_pca_transformed_splited_test = self.data_man.get_data_pca_transformed_splited_test()
+        probas_pca_data_test = self.clf_pca_model_splited.predict_proba(data_pca_transformed_splited_test)
+        self.training_loss_pca_data_test = log_loss(y_true=labels_test, y_pred=probas_pca_data_test,
                                                     labels=self.clf_pca_model_splited.classes_)
         return self.training_loss_pca_data_test
 
-    def predict_probas_pca_data(self):
-        self.probas_pca_data = self.clf_pca_model.predict_proba(self.data_pca_transformed)
+    def save_model_pca(self,numm_comp=167):
+        joblib.dump(self.clf_pca_model, '../models/lregr_pca_model_'+str(numm_comp)+'.joblib')
 
-    def predict_probas_pca_data_train(self):
-        self.probas_pca_data_train = self.clf_pca_model_splited.predict_proba(self.data_pca_transformed_splited_train)
+    def load_model_pca(self, num_comp=167):
+        self.data_man.load_pca_data(num_components=num_comp)
+        self.clf_pca_model = joblib.load('../models/lregr_pca_model_'+str(num_comp)+'.joblib')
 
-    def predict_probas_pca_data_test(self):
-        self.probas_pca_data_test = self.clf_pca_model_splited.predict_proba(self.data_pca_transformed_splited_test)
-
-    def predict_probas_unlabeled_pca(self):
-        self.probas_unlabeled_pca = self.clf_pca_model.predict_proba(self.data_unlabeled_pca_transformed)
-
-    def submit_test_results_pca(self):
-        self.predict_probas_unlabeled_pca()
+    def submit_test_results_pca(self, nbr_comp_pca_model_trained_with=167):
+        data_unlabeled_pca_transformed = self.data_man.get_unlabeled_pca_transformed()
+        probas_unlabeled_pca = self.clf_pca_model.predict_proba(data_unlabeled_pca_transformed)
         header = self.clf_pca_model.classes_
-        df = pd.DataFrame(self.probas_unlabeled_pca, columns=header)
+        df = pd.DataFrame(probas_unlabeled_pca, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_'+str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_'+str(nbr_comp_pca_model_trained_with)+'.csv', index=None)

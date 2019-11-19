@@ -92,7 +92,7 @@ class DataManipulation:
     def get_test_data_ids(self):
         return self.ids_data_test
 
-    def load_images_data_train(self):
+    def get_images_data_train(self):
         # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_train = []
         for i in range(len(self.data)):
@@ -102,7 +102,7 @@ class DataManipulation:
             images_train.append(img)
         return np.array(images_train)
 
-    def load_images_data_unlabeled(self):
+    def get_images_data_unlabeled(self):
         # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_test = []
         for i in range(len(self.data_unlabeled)):
@@ -139,7 +139,7 @@ class DataManipulation:
 
         return img_target
 
-    def load_pca_data(self, num_components=140):
+    def load_pca_data(self, num_components=167):
         raw_data = pd.read_csv("../data_sets/raw/train.csv")
         raw_data = raw_data.drop("id", axis=1)
         raw_data = raw_data.drop("species", axis=1)
@@ -155,4 +155,23 @@ class DataManipulation:
         self.data_unlabeled_pca_transformed = self.pca.transform(test_data)
         self.data_pca_transformed_splited_train = self.pca.transform(self.data_train[:, :192])  # to exclude the ones added
         self.data_pca_transformed_splited_test = self.pca.transform(self.data_test[:, :192])
-        return self.data_pca_transformed, self.data_unlabeled_pca_transformed, self.data_pca_transformed_splited_train, self.data_pca_transformed_splited_test
+
+    def get_data_pca_transformed(self):
+        return self.data_pca_transformed
+
+    def get_unlabeled_pca_transformed(self):
+        return self.data_unlabeled_pca_transformed
+
+    def get_data_pca_transformed_splited_train(self):
+        return self.data_pca_transformed_splited_train
+
+    def get_data_pca_transformed_splited_test(self):
+        return self.data_pca_transformed_splited_test
+
+    def get_labels(self):
+        return self.labels
+
+    def get_labels_splited_train(self):
+        return self.labels_train
+    def get_labels_splited_test(self):
+        return self.labels_test
