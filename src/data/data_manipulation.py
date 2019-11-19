@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+from sklearn.decomposition import PCA
+
 
 class DataManipulation:
 
@@ -9,6 +11,8 @@ class DataManipulation:
         self.NUMBER_OF_SPECIES = 99
         self.data = None
         self.labels = None
+        self.data_pca_transformed_splited_train = None
+        self.data_pca_transformed_splited_test = None
         self.data_train = None
         self.data_test = None
         self.labels_train = None
@@ -18,13 +22,16 @@ class DataManipulation:
         self.ids_splited_data_train = None
         self.ids_splited_data_test = None
         self.ids_data_test = None
-        self.load_data()
+        self.pca = None
+        self.data_pca_transformed = None
+        self.data_unlabeled_pca_transformed = None
 
+        self.load_data()
 
     def load_data(self):
         raw_data = pd.read_csv("../data_sets/raw/train.csv")
-        #raw_data = raw_data.drop("id", axis=1)
-        ones = [1 for i in range(len(raw_data))] # Adding Bias !
+        # raw_data = raw_data.drop("id", axis=1)
+        ones = [1 for i in range(len(raw_data))]  # Adding Bias !
         raw_data["ones"] = ones
         labels = raw_data["species"]
         labels = np.array(labels)
@@ -41,21 +48,21 @@ class DataManipulation:
         raw_data = pd.read_csv("../data_sets/raw/test.csv")
         self.ids_data_test = raw_data["id"]
         raw_data = raw_data.drop("id", axis=1)
-        #print(len(self.ids_all_data_train))
+        # print(len(self.ids_all_data_train))
         ones = [1 for i in range(len(raw_data))]  # Adding Bias
         raw_data["ones"] = ones
         raw_data = np.array(raw_data)
         self.data_unlabeled = raw_data
 
     def split_data(self):
-        data_train,labels_train = [],[]
-        data_test,labels_test = [],[]
-        self.ids_splited_data_train, self.ids_splited_data_test = [],[]
+        data_train, labels_train = [], []
+        data_test, labels_test = [], []
+        self.ids_splited_data_train, self.ids_splited_data_test = [], []
         labels_uniq = np.unique(self.labels)
-        dict_labels = {k:0 for k in list(labels_uniq)}
+        dict_labels = {k: 0 for k in list(labels_uniq)}
 
         for i in range(len(self.data)):
-            if dict_labels[self.labels[i]]<8:
+            if dict_labels[self.labels[i]] < 8:
                 data_train.append(self.data[i])
                 labels_train.append(self.labels[i])
                 self.ids_splited_data_train.append(self.ids_all_data_train[i])
@@ -63,11 +70,12 @@ class DataManipulation:
                 data_test.append(self.data[i])
                 labels_test.append(self.labels[i])
                 self.ids_splited_data_test.append(self.ids_all_data_train[i])
-            dict_labels[self.labels[i]]+=1
+            dict_labels[self.labels[i]] += 1
 
-        self.data_train,self.labels_train = np.array(data_train),np.array(labels_train)
-        self.data_test,self.labels_test = np.array(data_test),np.array(labels_test)
-        self.ids_splited_data_train, self.ids_splited_data_test = np.array(self.ids_splited_data_train), np.array(self.ids_splited_data_test)
+        self.data_train, self.labels_train = np.array(data_train), np.array(labels_train)
+        self.data_test, self.labels_test = np.array(data_test), np.array(labels_test)
+        self.ids_splited_data_train, self.ids_splited_data_test = np.array(self.ids_splited_data_train), np.array(
+            self.ids_splited_data_test)
 
     def get_data(self):
         return self.data, self.labels
@@ -85,7 +93,7 @@ class DataManipulation:
         return self.ids_data_test
 
     def load_images_data_train(self):
-        #self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
+        # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_train = []
         for i in range(len(self.data)):
             img = self.leaf_image(self.ids_all_data_train[i])
@@ -95,7 +103,7 @@ class DataManipulation:
         return np.array(images_train)
 
     def load_images_data_unlabeled(self):
-        #self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
+        # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_test = []
         for i in range(len(self.data_unlabeled)):
             img = self.leaf_image(self.ids_data_test[i])
@@ -131,10 +139,20 @@ class DataManipulation:
 
         return img_target
 
-    # Test the leaf_image function
-    #leaf_id = 343
-    #leaf_img = leaf_image(leaf_id, target_length=160);
-    #plt.imshow(leaf_img, cmap='gray');
-    #plt.title('Leaf # ' + str(leaf_id));
-    #plt.axis('off');
-    #plt.show()
+    def load_pca_data(self, num_components=140):
+        raw_data = pd.read_csv("../data_sets/raw/train.csv")
+        raw_data = raw_data.drop("id", axis=1)
+        raw_data = raw_data.drop("species", axis=1)
+        raw_data = np.array(raw_data)
+
+        test_data = pd.read_csv("../data_sets/raw/test.csv")
+        test_data = test_data.drop("id", axis=1)
+        test_data = np.array(test_data)
+
+        self.pca = PCA(n_components=num_components, svd_solver='full')
+        self.pca.fit(raw_data)
+        self.data_pca_transformed = self.pca.transform(raw_data)
+        self.data_unlabeled_pca_transformed = self.pca.transform(test_data)
+        self.data_pca_transformed_splited_train = self.pca.transform(self.data_train[:, :192])  # to exclude the ones added
+        self.data_pca_transformed_splited_test = self.pca.transform(self.data_test[:, :192])
+        return self.data_pca_transformed, self.data_unlabeled_pca_transformed, self.data_pca_transformed_splited_train, self.data_pca_transformed_splited_test
