@@ -18,6 +18,7 @@ class DataManipulation:
         self.ids_splited_data_train = None
         self.ids_splited_data_test = None
         self.ids_data_test = None
+        self.load_data()
 
 
     def load_data(self):
