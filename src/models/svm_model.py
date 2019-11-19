@@ -1,6 +1,6 @@
 import data.data_manipulation as dm
 from sklearn import svm
-import pickle
+import joblib
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn import metrics
@@ -19,6 +19,15 @@ class SvmModel:
         self.load_data()
         #hyper parameters
         self.rbf_gamma = None
+        self.sigmoid_coef0 = None
+        self.sigmoid_gamma = None
+        self.poly_degree = None
+        self.poly_gamma = None
+        self.poly_coef0 = None
+        #classifier for every kernel after cross-validation
+        self.clf_rbf = None
+        self.clf_sigmoid = None
+        self.clf_poly = None
 
 
 
@@ -50,11 +59,27 @@ class SvmModel:
     def calcul_test_accuracy(self):
         self.test_accuracy = self.clf.score(self.x_test,self.y_test)
 
-    def save_model(self,filename='svm_model'):
-        pickle.dump(self.clf, open("../models/"+filename, 'wb'))
+    def save_model(self,filename='svm_model',kernel='default'):
+        if kernel == 'default':
+            joblib.dump(self.clf, open("../models/"+filename + '.joblib', 'wb'))
+        elif kernel == 'rbf':
+            joblib.dump(self.clf_rbf, open("../models/" + filename + '_rbf.joblib', 'wb'))
+        elif kernel == 'sigmoid':
+            joblib.dump(self.clf_sigmoid, open("../models/" + filename + '_sigmoid.joblib', 'wb'))
+        elif kernel == 'poly :':
+            joblib.dump(self.clf_poly, open("../models/" + filename + '_poly.joblib', 'wb'))
+        else:
+            print("The specified kernel is not an option. Please choose one of the following options : poly OR rbf OR sigmoid.")
 
-    def load_model(self,filename='svm_model'):
-        self.clf = pickle.load(open("../models/"+filename, 'rb'))
+    def load_model(self,filename='svm_model',kernel='default'):
+        if kernel == 'default':
+            self.clf = joblib.load(open("../models/"+filename + '.joblib', 'rb'))
+        elif kernel == 'rbf':
+            self.clf_rbf = joblib.load(open("../models/" + filename + '_rbf.joblib', 'wb'))
+        elif kernel == 'sigmoid':
+            self.clf_sigmoid = joblib.load(open("../models/" + filename + '_sigmoid.joblib', 'wb'))
+        elif kernel == 'poly :':
+            self.clf_poly = joblib.load(open("../models/" + filename + '_poly.joblib', 'wb'))
 
     def cross_validation(self,kernel = 'rbf'):
         #kernels = ['poly', 'rbf', 'sigmoid'] # we don't consider the linear kernel because it is the same as poly kernel with degree = 1
@@ -73,6 +98,7 @@ class SvmModel:
                     print('score = ',best_gamma_score,end='\n\n')
             self.rbf_gamma = best_gamma
             self.train_model(kernel='rbf',gamma=self.rbf_gamma)
+            self.clf_rbf = self.clf
             print("resulting gamma : ",self.rbf_gamma)
 
         elif kernel == 'sigmoid':
@@ -80,8 +106,8 @@ class SvmModel:
             best_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
             best_gamma = 0.1
             best_coef0 = 0
-            for gamma in list(np.arange(0.1, 2.1, 0.1)) + [2 ** i for i in range(1, 10)] + ['auto']:
-                for coef0 in [0.001 * (10 ** i) for i in range(3)]+[2 ** i for i in range(10)] :
+            for gamma in list(np.arange(0.1, 2.1, 0.2)) + [2 ** i for i in range(1, 6)] + ['auto']:
+                for coef0 in [0.001 * (10 ** i) for i in range(3)]+[2 ** i for i in range(6)] :
                     self.train_model(kernel='sigmoid', gamma=gamma, coef0=coef0)
                     mean_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
                     if mean_score > best_score :
@@ -94,31 +120,41 @@ class SvmModel:
             self.sigmoid_gamma = best_gamma
             self.sigmoid_coef0 = best_coef0
             self.train_model(kernel='sigmoid',gamma=self.sigmoid_gamma,coef0=self.sigmoid_coef0)
+            self.clf_sigmoid = self.clf
             print("resulting gamma : ",self.sigmoid_gamma)
             print("resulting coef0 : ",self.sigmoid_coef0)
+
         elif kernel == 'poly':
             self.train_model(kernel='poly',gamma=0.1,coef0=0,degree=1)
             best_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
             best_gamma = 0.1
             best_coef0 = 0
             best_degree = 1
-            for gamma in list(np.arange(0.1, 2.1, 0.1)) + [2 ** i for i in range(1, 5)] + ['auto']:
-                for coef0 in [2 ** i for i in range(10)] :
-                    for degree in range(2,10):
-                        self.train_model(kernel='sigmoid', gamma=gamma, coef0=coef0)
+            for gamma in list(np.arange(0.1, 2.1, 0.3)) + [2 ** i for i in range(1, 5)] + ['auto']:
+                for coef0 in [2 ** i for i in range(6)] :
+                    for degree in range(2,8):
+                        self.train_model(kernel='sigmoid', gamma=gamma, coef0=coef0,degree=degree)
                         mean_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
                         if mean_score > best_score :
                             best_score = mean_score
                             best_gamma = gamma
                             best_coef0 = coef0
+                            best_degree = degree
                             print('gama = ',best_gamma)
                             print('coef0 = ',best_coef0)
+                            print('degree = ',best_degree)
                             print('score = ',best_score,end='\n\n')
-            self.sigmoid_gamma = best_gamma
-            self.sigmoid_coef0 = best_coef0
-            self.train_model(kernel='sigmoid',gamma=self.sigmoid_gamma,coef0=self.sigmoid_coef0)
-            print("resulting gamma : ",self.sigmoid_gamma)
-            print("resulting coef0 : ",self.sigmoid_coef0)
+            self.poly_gamma = best_gamma
+            self.poly_coef0 = best_coef0
+            self.poly_degree = best_degree
+            self.train_model(kernel='poly',gamma=self.poly_gamma,coef0=self.poly_coef0,degree=self.poly_degree)
+            self.clf_poly = self.clf
+            print("resulting gamma : ",self.poly_gamma)
+            print("resulting coef0 : ",self.poly_coef0)
+            print("resulting degree : ",self.poly_degree)
+        else:
+            print("The specified kernel is not an option. Please choose one of the following options : poly OR rbf OR sigmoid.")
+            print("By default the kernel will be rbf ")
 
 
 
