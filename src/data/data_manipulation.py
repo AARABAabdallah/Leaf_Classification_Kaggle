@@ -9,28 +9,34 @@ class DataManipulation:
 
     def __init__(self):
         self.NUMBER_OF_SPECIES = 99
-        self.data = None
-        self.labels = None
-        self.data_pca_transformed_splited_train = None
-        self.data_pca_transformed_splited_test = None
-        self.data_train = None
-        self.data_test = None
-        self.labels_train = None
-        self.labels_test = None
-        self.data_unlabeled = None
-        self.ids_all_data_train = None
-        self.ids_splited_data_train = None
-        self.ids_splited_data_test = None
-        self.ids_data_test = None
-        self.pca = None
-        self.data_pca_transformed = None
-        self.data_unlabeled_pca_transformed = None
+        self.data = None                    #Contains all the training data
+        self.labels = None                  #Contains the labels of all the training data
+        self.data_train = None              #Contains 80% of the trainging data
+        self.data_test = None               #Contains 20% of the trainging data
+        self.data_unlabeled = None          #Contains the testing data
+
+        self.labels_train = None            #Contains labels that correspods to self.data_train
+        self.labels_test = None             #Contains labels that correspods to self.data_test
+
+        self.ids_all_data_train = None      #Contains a vector of ids that corresponds to self.data
+        self.ids_splited_data_train = None  #Contains a vector of ids that corresponds to self.data_train
+        self.ids_splited_data_test = None   #Contains a vector of ids that corresponds to self.data_test
+        self.ids_data_test = None           #Contains a vector of ids that corresponds to self.data_unlabeled
+
+        self.pca = None                     #Contains an instance of PCA class
+
+        self.data_pca_transformed = None                #Contains self.data after pca transformation
+        self.data_unlabeled_pca_transformed = None      #Contains self.data_unlabeled after pca transformation
+        self.data_pca_transformed_splited_train = None  # Contains self.data_train(80% of data) after pca transformation
+        self.data_pca_transformed_splited_test = None   # Contains self.data_test(20% of data) after pca transformation
 
         self.load_data()
 
     def load_data(self):
+        # Here we prepare for later use the attributs: self.data, self.labels, self.ids_all_data_train,
+        # self.data_train, self.labels_train, self.data_test, self.labels_test
+        # self.ids_splited_data_train, self.ids_splited_data_test
         raw_data = pd.read_csv("../data_sets/raw/train.csv")
-        # raw_data = raw_data.drop("id", axis=1)
         ones = [1 for i in range(len(raw_data))]  # Adding Bias !
         raw_data["ones"] = ones
         labels = raw_data["species"]
@@ -55,6 +61,8 @@ class DataManipulation:
         self.data_unlabeled = raw_data
 
     def split_data(self):
+        # Prepare the data for the cross validation by spleiting the training data on the sub training data(80% of data)
+        # and the validation data(20% of data)
         data_train, labels_train = [], []
         data_test, labels_test = [], []
         self.ids_splited_data_train, self.ids_splited_data_test = [], []
@@ -93,7 +101,6 @@ class DataManipulation:
         return self.ids_data_test
 
     def get_images_data_train(self):
-        # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_train = []
         for i in range(len(self.data)):
             img = self.leaf_image(self.ids_all_data_train[i])
@@ -103,7 +110,6 @@ class DataManipulation:
         return np.array(images_train)
 
     def get_images_data_unlabeled(self):
-        # self.load_data() #A enlever cette ligne car l'apppel doit être par le LR model !!!
         images_test = []
         for i in range(len(self.data_unlabeled)):
             img = self.leaf_image(self.ids_data_test[i])
@@ -140,6 +146,8 @@ class DataManipulation:
         return img_target
 
     def load_pca_data(self, num_components=167):
+        # Here we trasform the data accordingly to the num_components parameter that specifies how many columns
+        # we want after the transformation
         raw_data = pd.read_csv("../data_sets/raw/train.csv")
         raw_data = raw_data.drop("id", axis=1)
         raw_data = raw_data.drop("species", axis=1)
