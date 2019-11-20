@@ -12,6 +12,7 @@ class LogisticalRegressionModel:
         self.clf_images_model = None
         self.clf_images_features_model = None
         self.clf_pca_model_splited = None
+        self.nbr_comp_pca_model_trained_with = None
         self.data_man = dm.DataManipulation()
         self.data_man.load_data()
 
@@ -35,7 +36,7 @@ class LogisticalRegressionModel:
     def load_model_features(self):
         self.clf_all_data = joblib.load('../models/lregr_all_data_model.joblib')
 
-    def submit_test_results(self):
+    def submit_test_results_features(self):
         # Here we write the submission.csv file according to this model to be submitted in kaggle
         data_unlabeled = self.data_man.get_unlabeled_data()
         probas_unlabeled = self.clf_all_data.predict_proba(data_unlabeled)
@@ -145,6 +146,7 @@ class LogisticalRegressionModel:
 
         print("nbr_comp_min: ",nbr_compoenents_min)
         self.train_model_pca('all_data', num_comp=nbr_compoenents_min)
+        return nbr_compoenents_min
 
     def train_model_pca(self, type='all_data', num_comp=167, save=True):
         # type is a parameter that specifies wether we train the model on all the training data,
@@ -162,7 +164,9 @@ class LogisticalRegressionModel:
             labels = self.data_man.get_labels()
             self.clf_pca_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_pca_model.fit(data_pca_transformed, labels)
-            if save == True: self.save_model_pca(numm_comp=num_comp)
+            if save == True:
+                self.save_model_pca(numm_comp=num_comp)
+                self.nbr_comp_pca_model_trained_with = num_comp
 
     def calculate_training_loss_pca_data(self):
         labels = self.data_man.get_labels()
@@ -187,11 +191,11 @@ class LogisticalRegressionModel:
         self.data_man.load_pca_data(num_components=num_comp)
         self.clf_pca_model = joblib.load('../models/lregr_pca_model_'+str(num_comp)+'.joblib')
 
-    def submit_test_results_pca(self, nbr_comp_pca_model_trained_with=167):
+    def submit_test_results_pca(self):
         data_unlabeled_pca_transformed = self.data_man.get_unlabeled_pca_transformed()
         probas_unlabeled_pca = self.clf_pca_model.predict_proba(data_unlabeled_pca_transformed)
         header = self.clf_pca_model.classes_
         df = pd.DataFrame(probas_unlabeled_pca, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_'+str(nbr_comp_pca_model_trained_with)+'.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_'+str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from sklearn.decomposition import PCA
+from sklearn import preprocessing
 
 
 class DataManipulation:
@@ -31,14 +32,14 @@ class DataManipulation:
         self.data_pca_transformed_splited_test = None   # Contains self.data_test(20% of data) after pca transformation
 
         self.load_data()
+        self.load_unlabeled_data()
+        #self.data_normalization_centring()
 
     def load_data(self):
         # Here we prepare for later use the attributs: self.data, self.labels, self.ids_all_data_train,
         # self.data_train, self.labels_train, self.data_test, self.labels_test
         # self.ids_splited_data_train, self.ids_splited_data_test
         raw_data = pd.read_csv("../data_sets/raw/train.csv")
-        ones = [1 for i in range(len(raw_data))]  # Adding Bias !
-        raw_data["ones"] = ones
         labels = raw_data["species"]
         labels = np.array(labels)
         self.ids_all_data_train = raw_data["id"]
@@ -46,18 +47,26 @@ class DataManipulation:
         raw_data = raw_data.drop("species", axis=1)
         raw_data = raw_data.drop("id", axis=1)
         raw_data = np.array(raw_data)
+
+        #raw_data -= np.mean(self.data, axis=0) # data centring
+        #raw_data /= np.std(self.data, axis=0)  # data normalization
+        raw_data = preprocessing.scale(raw_data)
+
         self.data = raw_data
         self.labels = labels
+
         self.split_data()
 
     def load_unlabeled_data(self):
         raw_data = pd.read_csv("../data_sets/raw/test.csv")
         self.ids_data_test = raw_data["id"]
         raw_data = raw_data.drop("id", axis=1)
-        # print(len(self.ids_all_data_train))
-        ones = [1 for i in range(len(raw_data))]  # Adding Bias
-        raw_data["ones"] = ones
         raw_data = np.array(raw_data)
+
+        #raw_data -= np.mean(self.data, axis=0)  # data centring
+        #raw_data /= np.std(self.data, axis=0)  # data normalization
+        raw_data = preprocessing.scale(raw_data)
+
         self.data_unlabeled = raw_data
 
     def split_data(self):
@@ -148,21 +157,12 @@ class DataManipulation:
     def load_pca_data(self, num_components=167):
         # Here we trasform the data accordingly to the num_components parameter that specifies how many columns
         # we want after the transformation
-        raw_data = pd.read_csv("../data_sets/raw/train.csv")
-        raw_data = raw_data.drop("id", axis=1)
-        raw_data = raw_data.drop("species", axis=1)
-        raw_data = np.array(raw_data)
-
-        test_data = pd.read_csv("../data_sets/raw/test.csv")
-        test_data = test_data.drop("id", axis=1)
-        test_data = np.array(test_data)
-
         self.pca = PCA(n_components=num_components, svd_solver='full')
-        self.pca.fit(raw_data)
-        self.data_pca_transformed = self.pca.transform(raw_data)
-        self.data_unlabeled_pca_transformed = self.pca.transform(test_data)
-        self.data_pca_transformed_splited_train = self.pca.transform(self.data_train[:, :192])  # to exclude the ones added
-        self.data_pca_transformed_splited_test = self.pca.transform(self.data_test[:, :192])
+        self.pca.fit(self.data)#raw_data)
+        self.data_pca_transformed = self.pca.transform(self.data)
+        self.data_unlabeled_pca_transformed = self.pca.transform(self.data_unlabeled)
+        self.data_pca_transformed_splited_train = self.pca.transform(self.data_train)#[:, :192])  # to exclude the ones added
+        self.data_pca_transformed_splited_test = self.pca.transform(self.data_test)#[:, :192])
 
     def get_data_pca_transformed(self):
         return self.data_pca_transformed
@@ -181,5 +181,6 @@ class DataManipulation:
 
     def get_labels_splited_train(self):
         return self.labels_train
+
     def get_labels_splited_test(self):
         return self.labels_test

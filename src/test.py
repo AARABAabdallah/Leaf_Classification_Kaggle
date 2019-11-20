@@ -16,9 +16,21 @@ def main():
     log_reg.load_model_features_images()
     training_loss_images_features = log_reg.calculate_training_loss_features_images()
 
-    #log_reg.train_model_pca(num_comp=158)
-    log_reg.load_model_pca(num_comp=158)
-    training_loss_pca = log_reg.calculate_training_loss_pca_data()
+    nbr_comp_splited = log_reg.train_model_pca_cross_validation()
+    log_reg.submit_test_results_pca()
+    training_loss_pca_cross_val_splited = log_reg.calculate_training_loss_pca_data()
+
+    nbr_comp_all_data = log_reg.train_model_pca_cross_validation(type='all_data')
+    log_reg.submit_test_results_pca()
+    training_loss_pca_cross_val_all_data = log_reg.calculate_training_loss_pca_data()
+
+    #log_reg.load_model_pca(num_comp=167)
+    #training_loss_pca = log_reg.calculate_training_loss_pca_data()
+
+    log_reg.submit_test_results_features()
+    #log_reg.submit_test_results_pca(nbr_comp_pca_model_trained_with=158)
+    log_reg.submit_test_results_pca()
+    log_reg.submit_test_results_images_features()
 
     print("training_loss_model_features: ",training_all_data_loss)
     print()
@@ -26,7 +38,9 @@ def main():
     print()
     print("training_loss_model_images_features: ",training_loss_images_features)
     print()
-    print("training_loss_model_pca: ",training_loss_pca)
+    print("number of components_splited = ",nbr_comp_splited,"training_loss_model_pca_splited: ",training_loss_pca_cross_val_splited)
+    print()
+    print("number of components_all_data = ",nbr_comp_all_data,"training_loss_model_pca_all_data: ",training_loss_pca_cross_val_all_data)
 
     # Test the leaf_image function
     # leaf_id = 341
