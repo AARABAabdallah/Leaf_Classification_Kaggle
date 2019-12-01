@@ -117,6 +117,14 @@ class DataManipulation:
             img = img.flatten()
             images_train.append(img)
         return np.array(images_train)
+    
+    def get_images_2D_data_train(self):
+        images_train = []
+        for i in range(len(self.data)):
+            img = self.leaf_image(self.ids_all_data_train[i])
+            img = np.array(img)
+            images_train.append(img)
+        return np.array(images_train)
 
     def get_images_data_unlabeled(self):
         images_test = []
@@ -124,6 +132,14 @@ class DataManipulation:
             img = self.leaf_image(self.ids_data_test[i])
             img = np.array(img)
             img = img.flatten()
+            images_test.append(img)
+        return np.array(images_test)
+    
+    def get_images_2D_data_unlabeled(self):
+        images_test = []
+        for i in range(len(self.data_unlabeled)):
+            img = self.leaf_image(self.ids_data_test[i])
+            img = np.array(img)
             images_test.append(img)
         return np.array(images_test)
 

@@ -18,8 +18,12 @@ def main():
     #print(training_loss)
 
     rn_model = rn.RN_model()
-    rn_model.train_model_features()
-    rn_model.submit_test_results_features()
+    rn_model.train_model_pca_cross_validation()
+    rn_model.submit_test_results_pca()
+    #print(rn_model.train_model_pca_cross_validation())
+    # rn_model.load_model_images()
+    # rn_model.submit_test_results_images()
+    # rn_model.submit_test_results_images_features()
 
 
 if __name__ == "__main__":
