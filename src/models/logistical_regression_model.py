@@ -14,7 +14,7 @@ class LogisticalRegressionModel:
         self.clf_pca_model_splited = None
         self.nbr_comp_pca_model_trained_with = None
         self.data_man = dm.DataManipulation()
-        self.data_man.load_data()
+        #self.data_man.load_data()
 
     ############################# Features Trained model #############################
     def train_model_features(self):
@@ -129,7 +129,7 @@ class LogisticalRegressionModel:
         # the validation_loss is calculated according to the type:
         # if type == 'data_splited' then the training and the validassion loss will be done according to the splited data
         # else(type = 'all_data' then the training and the validassion loss will be done according to all the data
-        err_val_min = 1
+        err_val_min = 100
         nbr_compoenents_min = 1
         for i in tqdm.tqdm(range(1, 192)):
             if type == 'data_splited':
@@ -165,7 +165,7 @@ class LogisticalRegressionModel:
             self.clf_pca_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
             self.clf_pca_model.fit(data_pca_transformed, labels)
             if save == True:
-                self.save_model_pca(numm_comp=num_comp)
+                self.save_model_pca(num_comp=num_comp)
                 self.nbr_comp_pca_model_trained_with = num_comp
 
     def calculate_training_loss_pca_data(self):
@@ -184,11 +184,12 @@ class LogisticalRegressionModel:
                                                     labels=self.clf_pca_model_splited.classes_)
         return self.training_loss_pca_data_test
 
-    def save_model_pca(self,numm_comp=167):
-        joblib.dump(self.clf_pca_model, '../models/lregr_pca_model_'+str(numm_comp)+'.joblib')
+    def save_model_pca(self,num_comp=167):
+        joblib.dump(self.clf_pca_model, '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
 
     def load_model_pca(self, num_comp=167):
         self.data_man.load_pca_data(num_components=num_comp)
+        self.nbr_comp_pca_model_trained_with = num_comp
         self.clf_pca_model = joblib.load('../models/lregr_pca_model_'+str(num_comp)+'.joblib')
 
     def submit_test_results_pca(self):

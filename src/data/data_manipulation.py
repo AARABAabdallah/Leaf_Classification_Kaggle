@@ -33,7 +33,6 @@ class DataManipulation:
 
         self.load_data()
         self.load_unlabeled_data()
-        #self.data_normalization_centring()
 
     def load_data(self):
         # Here we prepare for later use the attributs: self.data, self.labels, self.ids_all_data_train,
