@@ -1,4 +1,5 @@
-from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+
 import data.data_manipulation as dm
 from sklearn.metrics import log_loss
 import joblib
@@ -6,7 +7,7 @@ import pandas as pd
 import numpy as np
 import tqdm as tqdm
 
-class LogisticalRegressionModel:
+class GaussianNaiveBayesModel:
     def __init__(self):
         self.clf_all_data = None
         self.clf_images_model = None
@@ -18,7 +19,7 @@ class LogisticalRegressionModel:
     ############################# Features Trained model #############################
     def train_model_features(self):
         data, labels = self.data_man.get_data()
-        self.clf_all_data = LogisticRegression(solver='newton-cg', multi_class='multinomial')
+        self.clf_all_data = GaussianNB()
         self.clf_all_data.fit(data, labels)
         self.save_model_features()
 
@@ -30,10 +31,10 @@ class LogisticalRegressionModel:
         return training_loss_all_data
 
     def save_model_features(self):
-        joblib.dump(self.clf_all_data, '../models/lregr_all_data_model.joblib')
+        joblib.dump(self.clf_all_data, '../models/gnbayes_all_data_model.joblib')
 
     def load_model_features(self):
-        self.clf_all_data = joblib.load('../models/lregr_all_data_model.joblib')
+        self.clf_all_data = joblib.load('../models/gnbayes_all_data_model.joblib')
 
     def submit_test_results_features(self):
         # Here we write the submission.csv file according to this model to be submitted in kaggle
@@ -43,13 +44,13 @@ class LogisticalRegressionModel:
         df = pd.DataFrame(probas_unlabeled, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/gnbayes_test_results.csv', index=None)
 
     ############################# Images trained model #############################
     def train_model_images(self):
         images_train = self.data_man.get_images_data_train()
         labels = self.data_man.get_labels()
-        self.clf_images_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
+        self.clf_images_model = GaussianNB()
         self.clf_images_model.fit(images_train, labels)
         self.save_model_images()
 
@@ -62,10 +63,10 @@ class LogisticalRegressionModel:
         return training_loss_data_train_images
 
     def save_model_images(self):
-        joblib.dump(self.clf_images_model, '../models/lregr_images_data_model.joblib')
+        joblib.dump(self.clf_images_model, '../models/gnbayes_images_data_model.joblib')
 
     def load_model_images(self):
-        self.clf_images_model = joblib.load('../models/lregr_images_data_model.joblib')
+        self.clf_images_model = joblib.load('../models/gnbayes_images_data_model.joblib')
 
     def submit_test_results_images(self):
         images_unlabeled = self.data_man.get_images_data_unlabeled()
@@ -74,7 +75,7 @@ class LogisticalRegressionModel:
         df = pd.DataFrame(probas_unlabeled_images, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_images.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/gnbayes_test_results_images.csv', index=None)
 
 
     ############################# Features, Images concatenated trained model #############################
@@ -94,7 +95,7 @@ class LogisticalRegressionModel:
 
     def train_model_images_features(self):
         features_images_train, labels = self.concatenate_features_images_train()
-        self.clf_images_features_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
+        self.clf_images_features_model = GaussianNB()
         self.clf_images_features_model.fit(features_images_train, labels)
         self.save_model_features_images()
 
@@ -108,10 +109,10 @@ class LogisticalRegressionModel:
         return training_loss_data_train_features_images
 
     def save_model_features_images(self):
-        joblib.dump(self.clf_images_features_model, '../models/lregr_features_images_data_model.joblib')
+        joblib.dump(self.clf_images_features_model, '../models/gnbayes_features_images_data_model.joblib')
 
     def load_model_features_images(self):
-        self.clf_images_features_model = joblib.load('../models/lregr_features_images_data_model.joblib')
+        self.clf_images_features_model = joblib.load('../models/gnbayes_features_images_data_model.joblib')
 
     def submit_test_results_images_features(self):
         features_images_unlabeled = self.concatenate_features_images_test()
@@ -121,7 +122,8 @@ class LogisticalRegressionModel:
         df = pd.DataFrame(probas_unlabeled_features_images, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_images_features.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/gnbayes_test_results_images_features.csv', index=None)
+
 
     ############################# model based on PCA transformed data #############################
     def train_model_pca_cross_validation(self, type='data_splited'):
@@ -147,7 +149,7 @@ class LogisticalRegressionModel:
         self.train_model_pca('all_data', num_comp=nbr_compoenents_min)
         return nbr_compoenents_min
 
-    def train_model_pca(self, type='all_data', num_comp=167, save=True):
+    def train_model_pca(self, type='all_data', num_comp=19, save=True):
         # type is a parameter that specifies wether we train the model on all the training data,
             # or only on the splited data training, will be needed in the cross validation function
         # num_comp: is a parameter that specifies the number the components to hold after the data transformation
@@ -156,12 +158,12 @@ class LogisticalRegressionModel:
         if type == 'data_splited':
             data_pca_transformed_splited_train = self.data_man.get_data_pca_transformed_splited_train()
             labels_train = self.data_man.get_labels_splited_train()
-            self.clf_pca_model_splited = LogisticRegression(solver='newton-cg', multi_class='multinomial')
+            self.clf_pca_model_splited = GaussianNB()
             self.clf_pca_model_splited.fit(data_pca_transformed_splited_train, labels_train)
         else:
             data_pca_transformed = self.data_man.get_data_pca_transformed()
             labels = self.data_man.get_labels()
-            self.clf_pca_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
+            self.clf_pca_model = GaussianNB()
             self.clf_pca_model.fit(data_pca_transformed, labels)
             if save == True:
                 self.save_model_pca(num_comp=num_comp)
@@ -183,13 +185,13 @@ class LogisticalRegressionModel:
                                                     labels=self.clf_pca_model_splited.classes_)
         return self.training_loss_pca_data_test
 
-    def save_model_pca(self,num_comp=167):
-        joblib.dump(self.clf_pca_model, '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+    def save_model_pca(self,num_comp=19):
+        joblib.dump(self.clf_pca_model, '../models/gnbayes_pca_model_'+str(num_comp)+'.joblib')
 
-    def load_model_pca(self, num_comp=167):
+    def load_model_pca(self, num_comp=19):
         self.data_man.load_pca_data(num_components=num_comp)
         self.nbr_comp_pca_model_trained_with = num_comp
-        self.clf_pca_model = joblib.load('../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+        self.clf_pca_model = joblib.load('../models/gnbayes_pca_model_'+str(num_comp)+'.joblib')
 
     def submit_test_results_pca(self):
         data_unlabeled_pca_transformed = self.data_man.get_unlabeled_pca_transformed()
@@ -198,4 +200,4 @@ class LogisticalRegressionModel:
         df = pd.DataFrame(probas_unlabeled_pca, columns=header)
         test_ids = self.data_man.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_'+str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)
+        df.to_csv(r'../data_sets/submissions/gnbayes_test_results_pca_nbcomp_'+str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)
