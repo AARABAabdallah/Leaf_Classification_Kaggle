@@ -7,6 +7,7 @@ import os
 from sklearn.metrics import log_loss
 import pandas as pd
 import enlighten
+import tqdm
 
 class SvmModel:
     def __init__(self):
@@ -178,9 +179,9 @@ class SvmModel:
             best_score = cross_val_score(self.clf, self.x_train, self.y_train, cv=5).mean()
             best_gamma = 0.1
             best_coef0 = 0
-            #gamma_list = list(np.arange(0.1, 2.1, 0.2)) + [2 ** i for i in range(1, 6)] + ['auto']
-            gamma_list =  ['auto']
-            #coef0_list = [0.001 * (10 ** i) for i in range(3)]+[2 ** i for i in range(6)]
+            gamma_list = list(np.arange(0.1, 2.1, 0.2)) + [2 ** i for i in range(1, 6)] + ['auto']
+            # gamma_list =  ['auto']
+            coef0_list = [0.001 * (10 ** i) for i in range(3)]+[2 ** i for i in range(6)]
             coef0_list =[2 ** i for i in range(2,6)]
             pbar = enlighten.Counter(total=(len(gamma_list) * len(coef0_list) ), desc='Basic',unit='ticks')
             for gamma in gamma_list:
@@ -243,4 +244,90 @@ class SvmModel:
             print("The specified kernel is not an option. Please choose one of the following options : poly OR rbf OR sigmoid.")
             print("By default the kernel will be 'rbf'")
 
+    ############################# model based on PCA transformed data #############################
+    def train_model_pca_cross_validation(self, type='all_data', kernel='linear', degree=3, gamma='auto', coef0=0):
+        # the validation_loss is calculated according to the type:
+        # if type == 'data_splited' then the training and the validassion loss will be done according to the splited data
+        # else(type = 'all_data' then the training and the validassion loss will be done according to all the data
+        err_val_min = 100
+        nbr_compoenents_min = 1
+        for i in tqdm.tqdm(range(2, 192)):
+            if type == 'data_splited':
+                self.train_model_pca('data_splited', num_comp=i, kernel=kernel,
+                                     degree=degree, gamma=gamma, coef0=coef0)
+                validation_loss = self.calculate_validation_loss_pca_data()
+            else:
+                # save=False so that we don't save the model in each iteration
+                self.train_model_pca('all_data', num_comp=i, save=False, kernel=kernel,
+                                     degree=degree, gamma=gamma, coef0=coef0)
+                validation_loss = self.calculate_training_loss_pca_data()
+                
+            if validation_loss < err_val_min:
+                err_val_min = validation_loss
+                nbr_compoenents_min = i
 
+        print("nbr_comp_min: ", nbr_compoenents_min)
+        self.train_model_pca('all_data', num_comp=nbr_compoenents_min, kernel=kernel,
+                             degree=degree, gamma=gamma, coef0=coef0)
+        return nbr_compoenents_min
+
+    def train_model_pca(self, type='all_data', num_comp=167, save=True, kernel='linear', degree=3, gamma='auto', coef0=0):
+        # type is a parameter that specifies wether we train the model on all the training data,
+            # or only on the splited data training, will be needed in the cross validation function
+        # num_comp: is a parameter that specifies the number the components to hold after the data transformation
+        # save: is a parameter that specifies wether to save the model or not (only when type!='all_data')
+        self.data_manip.load_pca_data(num_components=num_comp)
+        if type == 'data_splited':
+            data_pca_transformed_splited_train = self.data_manip.get_data_pca_transformed_splited_train()
+            labels_train = self.data_manip.get_labels_splited_train()
+            self.clf_pca_model_splited = svm.SVC(
+                kernel=kernel, probability=True, degree=degree, gamma=gamma, coef0=coef0)
+            self.clf_pca_model_splited.fit(
+                data_pca_transformed_splited_train, labels_train)
+        else:
+            data_pca_transformed = self.data_manip.get_data_pca_transformed()
+            labels = self.data_manip.get_labels()
+            self.clf_pca_model = svm.SVC(kernel=kernel, probability=True, degree=degree, gamma=gamma, coef0=coef0)
+            self.clf_pca_model.fit(data_pca_transformed, labels)
+            if save == True:
+                self.save_model_pca(num_comp=num_comp)
+                self.nbr_comp_pca_model_trained_with = num_comp
+
+    def calculate_training_loss_pca_data(self):
+        labels = self.data_manip.get_labels()
+        data_pca_transformed = self.data_manip.get_data_pca_transformed()
+        probas_pca_data = self.clf_pca_model.predict_proba(
+            data_pca_transformed)
+        training_loss_pca_data = log_loss(y_true=labels, y_pred=probas_pca_data,
+                                          labels=self.clf_pca_model.classes_)
+        return training_loss_pca_data
+
+    def calculate_validation_loss_pca_data(self):
+        labels_test = self.data_manip.get_labels_splited_test()
+        data_pca_transformed_splited_test = self.data_manip.get_data_pca_transformed_splited_test()
+        probas_pca_data_test = self.clf_pca_model_splited.predict_proba(
+            data_pca_transformed_splited_test)
+        self.training_loss_pca_data_test = log_loss(y_true=labels_test, y_pred=probas_pca_data_test,
+                                                    labels=self.clf_pca_model_splited.classes_)
+        return self.training_loss_pca_data_test
+
+    def save_model_pca(self, num_comp=167):
+        joblib.dump(self.clf_pca_model,
+                    '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+
+    def load_model_pca(self, num_comp=167):
+        self.data_manip.load_pca_data(num_components=num_comp)
+        self.nbr_comp_pca_model_trained_with = num_comp
+        self.clf_pca_model = joblib.load(
+            '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+
+    def submit_test_results_pca(self):
+        data_unlabeled_pca_transformed = self.data_manip.get_unlabeled_pca_transformed()
+        probas_unlabeled_pca = self.clf_pca_model.predict_proba(
+            data_unlabeled_pca_transformed)
+        header = self.clf_pca_model.classes_
+        df = pd.DataFrame(probas_unlabeled_pca, columns=header)
+        test_ids = self.data_manip.get_test_data_ids()
+        df.insert(loc=0, column='id', value=test_ids)
+        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_' +
+                  str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)
