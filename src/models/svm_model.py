@@ -83,6 +83,7 @@ class SvmModel:
         # Here we write the submission.csv file according to this model to be submitted in kaggle
         data_unlabeled = self.data_manip.get_unlabeled_data()
         if kernel == 'rbf':
+            self.clf_rbf = self.clf
             probas_unlabeled = self.clf_rbf.predict_proba(data_unlabeled)
             header = self.clf_rbf.classes_
             df = pd.DataFrame(probas_unlabeled, columns=header)
@@ -90,6 +91,7 @@ class SvmModel:
             df.insert(loc=0, column='id', value=test_ids)
             df.to_csv(r'../data_sets/submissions/svm_rbf_test_results.csv', index=None)
         elif kernel == 'sigmoid':
+            self.clf_sigmoid = self.clf
             probas_unlabeled = self.clf_sigmoid.predict_proba(data_unlabeled)
             header = self.clf_sigmoid.classes_
             df = pd.DataFrame(probas_unlabeled, columns=header)
@@ -97,6 +99,7 @@ class SvmModel:
             df.insert(loc=0, column='id', value=test_ids)
             df.to_csv(r'../data_sets/submissions/svm_sigmoid_test_results.csv', index=None)
         elif kernel == 'poly':
+            self.clf_poly = self.clf
             probas_unlabeled = self.clf_poly.predict_proba(data_unlabeled)
             header = self.clf_poly.classes_
             df = pd.DataFrame(probas_unlabeled, columns=header)
