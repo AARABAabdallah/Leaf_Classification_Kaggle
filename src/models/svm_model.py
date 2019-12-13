@@ -290,7 +290,7 @@ class SvmModel:
             self.clf_pca_model = svm.SVC(kernel=kernel, probability=True, degree=degree, gamma=gamma, coef0=coef0)
             self.clf_pca_model.fit(data_pca_transformed, labels)
             if save == True:
-                self.save_model_pca(num_comp=num_comp)
+                self.save_model_pca(num_comp=num_comp,kernel=kernel)
                 self.nbr_comp_pca_model_trained_with = num_comp
 
     def calculate_training_loss_pca_data(self):
@@ -311,15 +311,15 @@ class SvmModel:
                                                     labels=self.clf_pca_model_splited.classes_)
         return self.training_loss_pca_data_test
 
-    def save_model_pca(self, num_comp=167):
+    def save_model_pca(self, num_comp=160,  kernel='default'):
         joblib.dump(self.clf_pca_model,
-                    '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+                    '../models/svm_pca_model_'+kernel+'_'+str(num_comp)+'.joblib')
 
-    def load_model_pca(self, num_comp=167):
+    def load_model_pca(self, num_comp=160, kernel = 'default'):
         self.data_manip.load_pca_data(num_components=num_comp)
         self.nbr_comp_pca_model_trained_with = num_comp
         self.clf_pca_model = joblib.load(
-            '../models/lregr_pca_model_'+str(num_comp)+'.joblib')
+            '../models/svm_pca_model_'+kernel+'_'+str(num_comp)+'.joblib')
 
     def submit_test_results_pca(self):
         data_unlabeled_pca_transformed = self.data_manip.get_unlabeled_pca_transformed()
@@ -329,5 +329,5 @@ class SvmModel:
         df = pd.DataFrame(probas_unlabeled_pca, columns=header)
         test_ids = self.data_manip.get_test_data_ids()
         df.insert(loc=0, column='id', value=test_ids)
-        df.to_csv(r'../data_sets/submissions/lr_test_results_pca_nbcomp_' +
+        df.to_csv(r'../data_sets/submissions/svm_test_results_pca_nbcomp_' +
                   str(self.nbr_comp_pca_model_trained_with)+'.csv', index=None)
