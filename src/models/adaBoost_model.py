@@ -20,7 +20,7 @@ class AdaBoostModel:
         self.data_man = dm.DataManipulation()
 
     ############################# Features Trained model #############################
-    def train_model_cross_validation(self, n_estimators_max=1000):
+    def train_model_features_cross_validation(self, n_estimators_max=5000):
         err_val_min = 100
         n_estimators_min = 200
         for i in tqdm.tqdm(range(200, n_estimators_max+100, 100)):
@@ -71,7 +71,7 @@ class AdaBoostModel:
             index=None)
 
     ############################# Images trained model #############################
-    def train_model_images_cross_validation(self, n_estimators_max=1000):
+    def train_model_images_cross_validation(self, n_estimators_max=5000):
         err_val_min = 100
         n_estimators_min = 200
         for i in tqdm.tqdm(range(200, n_estimators_max + 100, 100)):
@@ -124,7 +124,7 @@ class AdaBoostModel:
             index=None)
 
     ############################# Features, Images concatenated trained model #############################
-    def train_model_features_images_cross_validation(self, n_estimators_max=1000):
+    def train_model_features_images_cross_validation(self, n_estimators_max=5000):
         err_val_min = 100
         n_estimators_min = 200
         for i in tqdm.tqdm(range(200, n_estimators_max + 100, 100)):
@@ -168,7 +168,7 @@ class AdaBoostModel:
         probas_data_train_features_images = self.clf_images_features_model.predict_proba(features_images_train)
         training_loss_data_train_features_images = log_loss(y_true=labels,
                                                             y_pred=probas_data_train_features_images,
-                                                            labels=self.clf_images_model.classes_)
+                                                            labels=self.clf_images_features_model.classes_)
         return training_loss_data_train_features_images
 
     def save_model_features_images(self, n_estimators=1000):
@@ -190,7 +190,7 @@ class AdaBoostModel:
 
 
     ############################# model based on PCA transformed data #############################
-    def train_model_pca_cross_validation(self, type='data_splited', n_estimators_max = 1000):
+    def train_model_pca_cross_validation(self, type='data_splited', n_estimators_max = 5000):
         # the validation_loss is calculated according to the type:
         # if type == 'data_splited' then the training and the validassion loss will be done according to the splited data
         # else(type = 'all_data' then the training and the validassion loss will be done according to all the data

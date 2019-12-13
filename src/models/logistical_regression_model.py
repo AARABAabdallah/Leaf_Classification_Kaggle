@@ -14,12 +14,11 @@ class LogisticalRegressionModel:
         self.clf_pca_model_splited = None
         self.nbr_comp_pca_model_trained_with = None
         self.data_man = dm.DataManipulation()
-        #self.data_man.load_data()
 
     ############################# Features Trained model #############################
     def train_model_features(self):
         data, labels = self.data_man.get_data()
-        self.clf_all_data = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_all_data = LogisticRegression(solver='newton-cg', multi_class='multinomial')
         self.clf_all_data.fit(data, labels)
         self.save_model_features()
 
@@ -50,7 +49,7 @@ class LogisticalRegressionModel:
     def train_model_images(self):
         images_train = self.data_man.get_images_data_train()
         labels = self.data_man.get_labels()
-        self.clf_images_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
         self.clf_images_model.fit(images_train, labels)
         self.save_model_images()
 
@@ -95,7 +94,7 @@ class LogisticalRegressionModel:
 
     def train_model_images_features(self):
         features_images_train, labels = self.concatenate_features_images_train()
-        self.clf_images_features_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+        self.clf_images_features_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
         self.clf_images_features_model.fit(features_images_train, labels)
         self.save_model_features_images()
 
@@ -105,7 +104,7 @@ class LogisticalRegressionModel:
             features_images_train)
         training_loss_data_train_features_images = log_loss(y_true=labels,
                                                                  y_pred=probas_data_train_features_images,
-                                                                 labels=self.clf_images_model.classes_)
+                                                                 labels=self.clf_images_features_model.classes_)
         return training_loss_data_train_features_images
 
     def save_model_features_images(self):
@@ -157,12 +156,12 @@ class LogisticalRegressionModel:
         if type == 'data_splited':
             data_pca_transformed_splited_train = self.data_man.get_data_pca_transformed_splited_train()
             labels_train = self.data_man.get_labels_splited_train()
-            self.clf_pca_model_splited = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+            self.clf_pca_model_splited = LogisticRegression(solver='newton-cg', multi_class='multinomial')
             self.clf_pca_model_splited.fit(data_pca_transformed_splited_train, labels_train)
         else:
             data_pca_transformed = self.data_man.get_data_pca_transformed()
             labels = self.data_man.get_labels()
-            self.clf_pca_model = LogisticRegression(C=1e5, solver='newton-cg', multi_class='multinomial')
+            self.clf_pca_model = LogisticRegression(solver='newton-cg', multi_class='multinomial')
             self.clf_pca_model.fit(data_pca_transformed, labels)
             if save == True:
                 self.save_model_pca(num_comp=num_comp)
